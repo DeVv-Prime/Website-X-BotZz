@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: vectro-cloud
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --worker-class eventlet --timeout 120 wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: SECRET_KEY
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          name: vectro-redis
+          type: redis
+          property: connectionString
+      # ... other env vars
+
+  - type: redis
+    name: vectro-redis
+    region: oregon
+    plan: free
