@@ -4,21 +4,36 @@ services:
     runtime: python
     region: oregon
     plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --worker-class eventlet --timeout 120 wsgi:application
+    healthCheckPath: /health
+    buildCommand: |
+      echo "Python version: $(python3 --version)"
+      pip install --upgrade pip==24.0 setuptools==68.2.2 wheel==0.41.3
+      pip install --no-cache-dir -r requirements.txt
+      mkdir -p static/uploads data logs
+      echo "Build complete!"
+    startCommand: |
+      gunicorn --bind 0.0.0.0:$PORT \
+        --workers 2 \
+        --worker-class eventlet \
+        --timeout 120 \
+        --log-level info \
+        wsgi:application
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: "true"
       - key: SECRET_KEY
         generateValue: true
-      - key: REDIS_URL
-        fromService:
-          name: vectro-redis
-          type: redis
-          property: connectionString
-      # ... other env vars
-
-  - type: redis
-    name: vectro-redis
-    region: oregon
-    plan: free
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_REDIRECT_URI
+        sync: false
+      - key: MAIN_ADMIN_ID
+        sync: false
